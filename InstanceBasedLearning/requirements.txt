@@ -3,4 +3,4 @@ matplotlib
 seaborn
 tensorflow == 2.5.0
 streamlit == 0.82.0
-qpsolvers
+qpsolvers == 1.6.1
