@@ -210,29 +210,6 @@ class LinearSVM(HyperplaneClassifier):
     def calc_gramMatrix(self, inputs):
         return tf.matmul(inputs,inputs, transpose_b = True)
 
-    # def fit(self,inputs,outputs):
-    #     K = self.calc_gramMatrix(inputs).numpy()
-    #     y = np.array(outputs).astype(float)
-    #     q = -1*np.ones(len(inputs))
-    #     P = np.einsum('i,ij,j->ij',y,K,y)
-    #     lb = np.zeros(len(inputs))
-    #     A = y.reshape([1,len(y)])
-    #     b = np.array([0.])
-    #     lmbda = solve_qp(P, q, A=A, b=b, lb=lb, solver='cvxopt')
-    #     self.get_SVs(inputs, outputs, lmbda)
-
-    # def train(self,inputs,outputs,plot,fig):
-    #     self.addToPlot(fig.axes[0], label= self.prefix + " SVM", color= self.get_color())
-    #     placeholder = st.empty()
-    #     t0 = time.time()
-    #     self.fit(inputs,outputs)
-    #     t1 = time.time()        
-    #     self.b = self.get_bias()
-    #     self.w = tf.reduce_sum(self.lambdaSV*self.ySV*tf.transpose(self.xSV),axis=1)
-    #     self.summaryMessage(placeholder, t1-t0)
-    #     self.plot_hyperplane(plot, fig)
-
-
     def get_SVs(self, inputs, outputs, lmbda):
         tfwhere = tf.where(lmbda>0.001)
         ySV = tf.gather(outputs,tfwhere)
@@ -386,8 +363,6 @@ if show_svm1 or show_svm2 or show_mlp:
         st.write('### Multi-Layer-Perceptron')
         mlp = MLP(maxEpochs = 10000)
         train_gd(mlp,X1,Y1,plot1,fig1)
-
-        # mlp.train(X1,Y1, plot1, fig1)
 
 
 
