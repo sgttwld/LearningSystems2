@@ -1,0 +1,4 @@
+numpy
+matplotlib
+seaborn
+streamlit == 0.82.0
