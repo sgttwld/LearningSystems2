@@ -133,7 +133,6 @@ class GradientDescentHC(HyperplaneClassifier):
         # smooth version of the decision function (for gradient descent)
         return tf.math.tanh(tf.reduce_sum(self.w*x, axis=-1)+self.b)
 
-    
     def plot_hyperplane(self, plot, fig, update=False):
         if not(update):
             self.addToPlot(fig.axes[0], label="Gradient descent", color="black")
@@ -220,7 +219,6 @@ class LinearSVM(HyperplaneClassifier):
         self.xSV = tf.reshape(xSV, [tf.shape(xSV)[0],tf.shape(xSV)[-1]])
     
     def get_bias(self):
-        # KSV = tf.matmul(self.xSV,self.xSV, transpose_b = True)
         KSV = self.calc_gramMatrix(self.xSV)
         return tf.reduce_mean(self.ySV - tf.reduce_sum(self.lambdaSV*self.ySV*KSV, axis=1)) 
         
@@ -348,7 +346,7 @@ if show_svm1 or show_svm2 or show_mlp:
     if show_svm1:
         st.write('### RBF Support Vector Machine')
         gamma = st.slider("Gamma", 0.05, 2.0, value = 1.0, step=0.05)
-        svm1 = NonlinearSVM("RBF", X1, Kernel("RBF","K(x,y) = e^{-\\gamma \\|x-y\\|}", params=[gamma]))
+        svm1 = NonlinearSVM("RBF", X1, Kernel("RBF","K(x,y) = e^{-\\gamma \\|x-y\\|^2}", params=[gamma]))
         train_svm(svm1,X1,Y1, plot1, fig1)
 
     if show_svm2:
