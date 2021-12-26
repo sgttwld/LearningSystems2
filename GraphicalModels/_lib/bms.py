@@ -1,6 +1,5 @@
 import numpy as np
 import streamlit as st
-import matplotlib.pyplot as plt
 import _lib.pr_func as pr
 from _lib.aux import *
 from time import time

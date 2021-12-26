@@ -69,7 +69,7 @@ def barplots(ps, labels):
         ax[i].set_title(labels[i])
         ax[i].bar(range(len(p)),p)
         ax[i].set_xticks(range(len(p)))
-        ax[i].set_xticklabels([(i,j,k) for i in range(2) for j in range(2) for k in range(2)], Fontsize=5)
+        ax[i].set_xticklabels([(i,j,k) for i in range(2) for j in range(2) for k in range(2)], fontsize=5)
     st.pyplot(fig)
 
 

@@ -113,11 +113,12 @@ fun = {
     'AND': lambda x,y: x+y > 1.5,
     'XOR': lambda x,y: (x+y)%2,
 }
-numEpochs = 2000
+numEpochs = 1500
 numTrainingData = 1000
 
 if show_boltzmannmachine:
     st.markdown("## Boltzmann machine")
+    fname = st.selectbox('Which function should be learned?',('OR', 'AND', 'XOR'))
     burnin = 10 
     hiddenUnits = st.slider("Hidden units", 0, 7, value = 0, step=1, key='hbm_hiddenUnits')
     beta = st.slider("Inverse temperature", 0.25, 5.0, value = 2.5, step=0.25, key='hbm_beta')
@@ -132,7 +133,6 @@ if show_boltzmannmachine:
         lambda n: .1 if n < 150 else (.05 if n<250 else .01),       # hiddenUnits = 6
         lambda n: .1 if n < 100 else (.05 if n<200 else .01),       # hiddenUnits = 7
         ]
-    fname = st.selectbox('Which function should be learned?',('OR', 'AND', 'XOR'))
     st.markdown("### Learning {} ({} hidden unit{})".format(fname,hiddenUnits,"s" if hiddenUnits>1 else ""))
     bm = BoltzmannMachine(numVisible=3,numHidden=hiddenUnits,beta=beta)
     trainingData = get_trainingData(f=fun[fname],Dsize=numTrainingData)
@@ -142,6 +142,7 @@ if show_boltzmannmachine:
 
 if show_rbm:
     st.markdown("## Restricted Boltzmann machine (standard learning rule)")
+    fname = st.selectbox('Which function should be learned?',('XOR','OR', 'AND'))
     burnin = 100
     hiddenUnits = st.slider("Hidden units", 0, 9, value = 4, step=1, key='rbm_hiddenUnits')
     beta = st.slider("Inverse temperature", 0.25, 5.0, value = 2.5, step=0.25, key='rbm_beta')
@@ -158,7 +159,6 @@ if show_rbm:
         lambda n: .075 if n<500 else (.05 if n<1000 else .01),    # hiddenUnits = 8
         lambda n: .075 if n<500 else (.05 if n<800 else .01),     # hiddenUnits = 9
         ]
-    fname = st.selectbox('Which function should be learned?',('XOR','OR', 'AND'))
     st.markdown("### Learning {} ({} hidden unit{})".format(fname,hiddenUnits,"s" if hiddenUnits>1 else ""))    
     rbm = RestrictedBoltzmannMachine(numVisible=3,numHidden=hiddenUnits,beta=beta)
     trainingData = get_trainingData(Dsize=numTrainingData,f=fun[fname])
