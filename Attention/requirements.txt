@@ -1,5 +1,5 @@
 numpy
 matplotlib
 seaborn
-pytorch
+torch
 streamlit == 1.13.0
