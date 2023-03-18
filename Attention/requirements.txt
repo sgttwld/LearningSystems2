@@ -1,0 +1,5 @@
+numpy
+matplotlib
+seaborn
+pytorch == 1.13.1
+streamlit == 1.13.0
