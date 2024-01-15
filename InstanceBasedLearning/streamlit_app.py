@@ -23,12 +23,12 @@ sns.set(
     style="white" 
 )
 
-@st.cache
-def gen_data(num, f):
+@st.cache_data
+def gen_data(num, _f):
     points = np.random.sample(size=(num,2))
     labels = []
     for x,y in points:
-        labels.append(1 if f(x)<y else -1)
+        labels.append(1 if _f(x)<y else -1)
     return points, labels
 
 def show_data(X,Y):
@@ -71,7 +71,6 @@ def train_gd(model,inputs,outputs,plot,fig):
     model.plot_hyperplane(plot, fig, update=True)
 
 
-
 def fit_svm(model,inputs,outputs):
     K = model.calc_gramMatrix(inputs).numpy()
     y = np.array(outputs).astype(float)
@@ -82,6 +81,7 @@ def fit_svm(model,inputs,outputs):
     b = np.array([0.])
     lmbda = solve_qp(P, q, A=A, b=b, lb=lb, solver='cvxopt')
     model.get_SVs(inputs, outputs, lmbda)
+
 
 def train_svm(model,inputs,outputs,plot,fig):
     model.addToPlot(fig.axes[0], label= model.prefix + " SVM", color= model.get_color())
@@ -142,9 +142,8 @@ class GradientDescentHC(HyperplaneClassifier):
             plot.pyplot(fig)
 
     def summaryMessage(self, placeholder, T, L):
-        with placeholder.beta_container(): 
-            st.write('* _Storage (floats):_', 3, "(1 $d$-dimensional parameter plus bias)")
-            st.write('* _Training time (seconds):_', round(T,4), "(loss: {:.4f})".format(L) )
+        placeholder.write('* _Storage (floats):_ {} (1 $d$-dimensional parameter plus bias)'.format(3))
+        placeholder.write('* _Training time (seconds):_ {} (loss: {:.4f})'.format(round(T,4), L))
 
 
 
@@ -177,15 +176,14 @@ class MLP(object):
             self.ctr.collections[0].remove()
             self.ctr = fig.axes[0].contour(XX, YY, Z, label="MLP", colors='black', levels=[0], alpha=.7,linestyles=['-'])
             self.ctr.collections[0].set_label("MLP")
-            fig.legend()
+            # fig.legend()
             plot.pyplot(fig)
         else:
             self.ctr = fig.axes[0].contour(XX, YY, Z, label="MLP", colors='black', levels=[0], alpha=.7,linestyles=['-'])
 
     def summaryMessage(self, placeholder, T, L):
-        with placeholder.beta_container():   
-            st.write('* _Storage (floats):_', int(np.sum([np.prod(np.shape(par)) for par in self.trainable_variables])), "(1 $d$-dimensional parameter, 2 hidden-dimensional parameters, 3 biases)")
-            st.write('* _Training time (seconds):_', round(T, 4), "(loss: {:.4f})".format(L))
+        placeholder.write('* _Storage (floats):_ {} (1 $d$-dimensional parameter, 2 hidden-dimensional parameters, 3 biases)'.format(int(np.sum([np.prod(np.shape(par)) for par in self.trainable_variables]))))
+        placeholder.write('* _Training time (seconds):_ {} (loss: {:.4f})'.format(round(T, 4),L))
 
 
 
@@ -201,10 +199,9 @@ class LinearSVM(HyperplaneClassifier):
         self.line = None
 
     def summaryMessage(self, placeholder, T):
-        with placeholder.beta_container():   
-            st.write('* _Storage (floats):_', np.prod(np.shape(self.xSV)) + np.shape(self.ySV)[0] + 
-                np.shape(self.lambdaSV)[0], "({} $d$-dim support vectors, plus their labels and coefficients)".format(len(self.ySV)))
-            st.write('* _Training time (seconds):_', round(T, 4))
+        placeholder.write('* _Storage (floats):_ {} ({} $d$-dim support vectors, plus their labels and coefficients)'.format(np.prod(np.shape(self.xSV)) + np.shape(self.ySV)[0] + 
+            np.shape(self.lambdaSV)[0],len(self.ySV)))
+        placeholder.write('* _Training time (seconds):_ {}'.format(round(T, 4)))
 
     def calc_gramMatrix(self, inputs):
         return tf.matmul(inputs,inputs, transpose_b = True)
@@ -250,11 +247,10 @@ class NonlinearSVM(LinearSVM):
         self.kernel = kernel
 
     def summaryMessage(self, placeholder, T):
-        with placeholder.beta_container():   
-            st.write('* _Kernel:_ ${}$'.format(self.kernel.equation))
-            st.write('* _Storage (floats):_', np.prod(np.shape(self.xSV)) + np.shape(self.ySV)[0] + 
-                np.shape(self.lambdaSV)[0], "({} $d$-dim support vectors, plus their labels and coefficients)".format(len(self.ySV)))
-            st.write('* _Training time (seconds):_', round(T, 4))
+        placeholder.write('* _Kernel:_ ${}$'.format(self.kernel.equation))
+        placeholder.write('* _Storage (floats):_ {} ({} $d$-dim support vectors, plus their labels and coefficients)'.format(np.prod(np.shape(self.xSV)) + np.shape(self.ySV)[0] + 
+            np.shape(self.lambdaSV)[0], len(self.ySV)))
+        placeholder.write('* _Training time (seconds):_ {}'.format(round(T, 4)))
 
     def calc_gramMatrix(self, inputs):
         return self.kernel.k(inputs,inputs)
@@ -351,7 +347,7 @@ if show_svm1 or show_svm2 or show_mlp:
 
     if show_svm2:
         st.write('### Tanh Support Vector Machine')
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         kappa = col1.slider("Kappa", 0.05, 1.8, value = 1.0, step=0.05)
         c = col2.slider("c", max(kappa,0.2), 8.0, value = 2.0, step=0.1)
         svm2 = NonlinearSVM("Tanh", X1, Kernel("Tanh","K(x,y) = \\tanh(\\kappa \\langle x,y\\rangle -c)", params=[kappa, c]))
