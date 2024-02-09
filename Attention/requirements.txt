@@ -1,5 +1,0 @@
-numpy
-matplotlib
-seaborn
-torch
-streamlit == 1.13.0
