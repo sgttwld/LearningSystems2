@@ -57,9 +57,14 @@ if show_wordgen:
         * **data**: list of {len(words)} words
         * **examples:** {', '.join(words[1030:1040])}
         * **vocabulary**: {''.join(vocab)}
+        * **str2ind**: {str2ind}
     """)
 
 
+######################################################################################################
+################################ Bigram counting model ###############################################
+######################################################################################################
+    st.write("### Bigram counting model")
 
     # create count matrix
     counts = torch.zeros((vocab_size,vocab_size), dtype=torch.int32)
@@ -69,11 +74,6 @@ if show_wordgen:
             ind1 = str2ind[ch1]
             ind2 = str2ind[ch2]
             counts[ind1,ind2] += 1
-
-######################################################################################################
-################################ Bigram counting model ###############################################
-######################################################################################################
-    st.write("### Bigram counting model")
 
     show_bcm = st.checkbox("Show bigram counting model")
     if show_bcm:
@@ -121,9 +121,8 @@ if show_wordgen:
         st.write("* log-likelihood:", -ll/n)
 
 
-        show_samples = st.expander("Counting model samples")
-
-        def generate_sample(probabilities):
+        # turn p_emp into simple generative model:
+        def generate_sample(probabilities, g):
             out = []
             ind = 0
             while True:
@@ -132,19 +131,23 @@ if show_wordgen:
                 out.append(vocab[ind])
                 if ind == 0:
                     break
-            return out
+            return out[:-1]
+        
 
-        with show_samples:
-            g = torch.Generator()
+        g = torch.Generator()
+
+        show_samples_counts = st.expander("Generation: Counting model")
+        with show_samples_counts:
             for i in range(5):
-                st.write(''.join(generate_sample(p_emp)))
-            st.write("**comparison to uniform probabilites**:")
-            unif = torch.ones((vocab_size, vocab_size))/vocab_size
-            for i in range(5):
-                st.write(''.join(generate_sample(unif)))
-            button = st.button("Generate")
+                st.write(''.join(generate_sample(p_emp, g)))
             
 
+        show_samples_unif = st.expander("Generation: Uniform probabilities")
+        with show_samples_unif:
+            unif = torch.ones((vocab_size, vocab_size))/vocab_size
+            for i in range(5):
+                st.write(''.join(generate_sample(unif, g)))
+        
 
 
 
@@ -158,6 +161,8 @@ if show_wordgen:
 
     show_bnn = st.checkbox("Show bigram neural network model")
     if show_bnn:
+
+
         # compile training dataset of bigrams 
         inputs, labels = [], []
         for w in words:
@@ -177,7 +182,7 @@ if show_wordgen:
             * We use each bigram as a tuple (input, label)
             * before we had {len(words)} words, resulting in {counts.sum()} bigrams
             * now we have {len(inputs)} inputs and {len(labels)} corresponding labels
-            * one-hot encoded, this results in an input dataset of shape {inputs_enc.shape}
+            * one-hot encoded, this results in input and label datasets each of shape {inputs_enc.shape}
             """) 
 
 
@@ -193,9 +198,14 @@ if show_wordgen:
             st.write(f"""
                 * the word '{words[2]}' results in 4 bigrams '.a', 'av', 'va', 'a.'
                 * this translates to input tokens {inputs[i_ava:i_ava+4]} and output tokens {labels[i_ava:i_ava+4]}
-                * and the corresponding one-hot encoded input vectors are:
+                * the corresponding one-hot encoded input vectors are:
                 """)
             st.write(inputs_enc[i_ava:i_ava+4].numpy())
+            st.write("""
+                * and the corresponding one-hot encoded output vectors:
+
+                """)
+            st.write(labels_enc[i_ava:i_ava+4].numpy())
 
 
         # neural network
@@ -234,9 +244,10 @@ if show_wordgen:
                 * Calculating the loss (neg. log-likelihood) for the batch consisting of the bigrams of 'ava':
                     - inputs: {xs}
                     - labels: {ys}
+                    - p = softmax( inputs @ W ): shape = {probs.shape} (distribution over the next token for each current token)
                     - probabilities that should to be high given these inputs and labels:
-                    p[0,1], p[1,22], P[2,1], P[3,0] =, {probs[0,1].data, probs[1,22].data, probs[2,1].data, probs[3,0].data}
-                    - using pytorch indexing: P[tensor([0,1,2,3]),labels] = {probs[torch.arange(4),ys].data}
+                    p[0,1], p[1,22], p[2,1], p[3,0] = {probs[0,1].data, probs[1,22].data, probs[2,1].data, probs[3,0].data}
+                    - using pytorch indexing: p[tensor([0,1,2,3]),labels] = {probs[torch.arange(4),ys].data}
                     - neg-log-likelihood = `-probs[torch.arange(4),ys].log().mean()` = {loss_ll}
                 """)
             st.write("""
@@ -244,7 +255,7 @@ if show_wordgen:
                     $\\frac{1}{N}\\sum_{i=1}^N\\sum_c \\delta_{c,y_i} \\ p_W(c|x_i)$ = `-(ys_1h*probs.log()).sum(1).mean()`
                 """)
             st.write(f"""
-                * 
+                * for 'ava':
                     - crossentropy(labels_1hot,logP) = {-(ys_1h*probs.log()).sum(1).mean()}
                     - torch.nn.CrossEntropyLoss(logits,labels) = {torch.nn.CrossEntropyLoss()(logits,ys)}
                 """)
@@ -254,12 +265,13 @@ if show_wordgen:
 
         progressbar0 = st.progress(0)
         placeholder0 = st.empty()
+        # for this simple example: batchsize = full dataset
         for i in range(epochs):
             # forward pass
             logits = inputs_enc @ W    # (num_data, 27) @ (27, 27) -> (num_data, 27)
             its = logits.exp()
             probs = its / its.sum(1, keepdims = True)     # softmax of logits
-            loss = -probs[torch.arange(len(labels)),labels].log().mean() # + 0.01*(W**2).mean()
+            loss = -probs[torch.arange(len(labels)),labels].log().mean()
             # backward pass
             W.grad = None
             loss.backward()
@@ -280,7 +292,7 @@ if show_wordgen:
                 out.append(vocab[ind])
                 if ind == 0:
                     break
-            return out
+            return out[:-1]
 
         show_sampling_from_nn = st.expander('Generation (trained to loss {})'.format(loss.item()))
         with show_sampling_from_nn:
@@ -323,9 +335,8 @@ if show_textgen:
 
     show_example_text = st.expander("Show example from dataset")
     with show_example_text:
-        start = 21000
-        st.write(text[start:start+3000])
-
+        start = 400000
+        st.write(text[start:start+10000])
 
     str2ind = {s:i for i,s in enumerate(vocab)}
     encode = lambda s: [str2ind[c] for c in s]
@@ -337,9 +348,11 @@ if show_textgen:
 
     show_example_encodedecode = st.expander("Tokenize and detokenize example")
     with show_example_encodedecode:
-        st.write('text:', text[:120])
-        st.write('encoded:', full_data[:120])
-        st.write('decoded:', decode(full_data[:120]))
+        st.write('**text**:', text[:120])
+        st.write('**vocab**:')
+        st.text(vocab)
+        st.write('**encoded**:', full_data[:120])
+        st.write('**decoded**:', decode(full_data[:120]))
 
     st.write("""
         * **block size/maximum context length**: maximum length of a chunk of input data (a token sequence) used to 
@@ -666,7 +679,7 @@ if show_textgen:
             st.write('*Losses:*')
             losses = estimate_loss(m, eval_iters=500, **config)
             st.write(losses)
-            print(config['name'],losses)
+            print(losses)
             st.write('*Generation:*')
             idx = m.generate(
                 idx=torch.zeros((1,1), dtype=torch.long).to(device),

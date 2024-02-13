@@ -14,7 +14,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # if torch.backends.mps.is_available():
 #     device = 'mps'
 
-torch.manual_seed(11235)
+torch.manual_seed(112358)
 
 st.title('LS2: Learning with Attention - large transformer model')
 
@@ -38,7 +38,6 @@ full_data = torch.tensor(encode(text), dtype=torch.long)
 n = int(0.9*len(full_data))
 train_data = full_data[:n]
 val_data = full_data[n:]
-
 
 def get_batch(split, batch_size, block_size):
     data = train_data if split == 'train' else val_data
@@ -215,8 +214,6 @@ class TransformerLanguageModel(torch.nn.Module):
             progressbar_gen.progress((i+1)/max_new_tokens, text='Stopped generating.')
             return idx.to(device)
 
-
-
 ##############################################################################
 ##############################################################################
 
@@ -256,11 +253,56 @@ if checkbox_load:
     st.write(losses)
     print(losses)
     st.write('**Generation:**')
-    idx = m.generate(idx=torch.zeros((1,1), dtype=torch.long).to(device), max_new_tokens=5000)[0].tolist()
+    
+    # idx = m.generate(idx=torch.zeros((1,1), dtype=torch.long).to(device), max_new_tokens=5000)[0].tolist()
+
+    prompt = "This two-year course in "
+    idx = m.generate(idx=torch.tensor([encode(prompt)]).to(device), max_new_tokens=5000)[0].tolist()
+    
     text = decode(idx)
     st.write(text)
     print(text)
 
+
+st.write("### Overfit to training data")
+checkbox_overfit = st.checkbox("load")
+if checkbox_overfit:
+
+    config = {
+        'name': 'overfitted transformer model',
+        'vocab_size': vocab_size,
+        'batch_size': 64,
+        'block_size': 256,
+        'n_embed': 768,
+        'num_blocks': 6,
+        'num_heads': 6,
+        'dropout': 0.01,
+        'max_iters': 20000,
+        'eval_iters': 500,
+        'lr': 3e-4,
+    }
+    st.write(config)
+    m = TransformerLanguageModel(**config).to(device)
+
+    # train(m, **config)
+    # torch.save(m.state_dict(),'saved/largetransformer_overfit.zip'.format(n_embed))
+
+    m.load_state_dict(torch.load('saved/largetransformer_overfit.zip'.format(n_embed)))
+    st.write('Model loaded.')
+    st.write('**Losses:**')
+    losses = estimate_loss(m, **config)
+    st.write(losses)
+    print(losses)
+    
+    st.write('**Generation:**')
+    
+    # start_idx = torch.zeros((1,1), dtype=torch.long).to(device)
+    prompt = "This two-year course in "
+    start_idx=torch.tensor([encode(prompt)]).to(device)
+    idx = m.generate(idx=start_idx, max_new_tokens=5000)[0].tolist()
+    text = decode(idx)
+    st.write(text)
+    print(text)
 
 
 
